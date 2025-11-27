@@ -34,7 +34,7 @@ def check_npu_status():
         return False, []
 
 def preprocess_image(image_path, target_size=640):
-    """Preprocess image สำหรับ YOLO model"""
+    """Preprocess image สำหรับ YOLO model - Letterbox with padding (maintain aspect ratio)"""
     
     # Load image
     img = cv2.imread(image_path)
@@ -44,15 +44,15 @@ def preprocess_image(image_path, target_size=640):
     original_shape = img.shape[:2]  # (height, width)
     print(f"📐 Original image size: {original_shape[1]}x{original_shape[0]}")
     
-    # Letterbox resize (maintain aspect ratio)
+    # Letterbox resize (maintain aspect ratio) - SAME AS TRAINING
     h, w = img.shape[:2]
     scale = min(target_size / h, target_size / w)
     new_h, new_w = int(h * scale), int(w * scale)
     
-    # Resize
+    # Resize image
     img_resized = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
     
-    # Create padded image (gray padding)
+    # Create padded image with gray background (114, 114, 114) - SAME AS YOLO
     img_padded = np.full((target_size, target_size, 3), 114, dtype=np.uint8)
     
     # Center the image
@@ -79,11 +79,24 @@ def postprocess_yolo(outputs, original_shape, scale, padding, conf_threshold=0.5
             predictions = predictions[0]  # Remove batch dimension
         
         print(f"🔍 Output shape: {predictions.shape}")
+        print(f"🔍 Output dtype: {predictions.dtype}")
+        print(f"🔍 Output range: [{np.min(predictions):.3f}, {np.max(predictions):.3f}]")
+        
+        # Check if we need to transpose (YOLOv5/v8 format: [num_features, num_predictions])
+        if predictions.shape[0] < predictions.shape[1]:
+            # Transpose to [num_predictions, num_features]
+            predictions = predictions.T
+            print(f"🔄 Transposed to: {predictions.shape}")
         
         if predictions.shape[-1] >= 5:
             # Standard format: [x, y, w, h, conf, class_probs...]
             boxes = predictions[:, :4]
             obj_conf = predictions[:, 4]
+            
+            # Debug: show confidence distribution
+            conf_over_threshold = np.sum(obj_conf > conf_threshold)
+            print(f"🔍 Confidences > {conf_threshold}: {conf_over_threshold}/{len(obj_conf)}")
+            print(f"🔍 Top 10 confidences: {np.sort(obj_conf)[-10:][::-1]}")
             
             if predictions.shape[-1] > 5:
                 class_probs = predictions[:, 5:]
@@ -99,6 +112,8 @@ def postprocess_yolo(outputs, original_shape, scale, padding, conf_threshold=0.5
             # Final confidence
             final_conf = obj_conf * class_conf
             
+            print(f"🔍 Final confidences > {conf_threshold}: {np.sum(final_conf > conf_threshold)}")
+            
             # Filter by confidence
             valid_mask = final_conf > conf_threshold
             if not np.any(valid_mask):
@@ -107,6 +122,9 @@ def postprocess_yolo(outputs, original_shape, scale, padding, conf_threshold=0.5
             boxes = boxes[valid_mask]
             scores = final_conf[valid_mask]
             class_ids = class_ids[valid_mask]
+            
+            print(f"🔍 Before NMS: {len(boxes)} boxes")
+            print(f"🔍 Before NMS: {len(boxes)} boxes")
             
             # Convert from center format (xywh) to corner format (xyxy)
             boxes_xyxy = np.copy(boxes)
@@ -123,17 +141,19 @@ def postprocess_yolo(outputs, original_shape, scale, padding, conf_threshold=0.5
                 iou_threshold
             )
             
+            print(f"🔍 After NMS: {len(indices) if len(indices) > 0 else 0} boxes")
+            
             if len(indices) > 0:
                 indices = indices.flatten()
                 boxes_xyxy = boxes_xyxy[indices]
                 scores = scores[indices]
                 class_ids = class_ids[indices]
                 
-                # Scale back to original image coordinates
+                # Scale back to original image coordinates (remove letterbox padding)
                 pad_w, pad_h = padding
                 boxes_xyxy[:, [0, 2]] -= pad_w  # Remove horizontal padding
                 boxes_xyxy[:, [1, 3]] -= pad_h  # Remove vertical padding
-                boxes_xyxy /= scale                # Scale back to original size
+                boxes_xyxy /= scale              # Scale back to original size
                 
                 # Clip to image boundaries
                 h, w = original_shape
@@ -186,7 +206,7 @@ def draw_results(image, boxes, scores, class_ids, class_names=None):
     return result_img
 
 def run_npu_inference(model_path, image_path, output_dir="./npu_results", 
-                     conf_threshold=0.5, iou_threshold=0.45, class_names=None):
+                     conf_threshold=0.25, iou_threshold=0.7, class_names=None):
     """Run inference using RKNN model on NPU"""
     
     print("🚀 RKNN NPU Inference Tool")
@@ -328,10 +348,10 @@ Examples:
                         help='Path to input image')
     parser.add_argument('--output', '-o', default='./npu_results',
                         help='Output directory (default: ./npu_results)')
-    parser.add_argument('--conf', type=float, default=0.5,
-                        help='Confidence threshold (default: 0.5)')
-    parser.add_argument('--iou', type=float, default=0.45,
-                        help='IoU threshold for NMS (default: 0.45)')
+    parser.add_argument('--conf', type=float, default=0.25,
+                        help='Confidence threshold (default: 0.25)')
+    parser.add_argument('--iou', type=float, default=0.7,
+                        help='IoU threshold for NMS (default: 0.7)')
     parser.add_argument('--classes', nargs='+',
                         help='Class names (e.g., --classes person car truck)')
     
