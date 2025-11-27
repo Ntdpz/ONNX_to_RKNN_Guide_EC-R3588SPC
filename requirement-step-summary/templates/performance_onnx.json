@@ -1,0 +1,77 @@
+{
+  "report_info": {
+    "model_name": "model_name",
+    "model_version": "1.0.0",
+    "model_type": "YOLOv8",
+    "task": "object_detection",
+    "test_date": "2025-11-27",
+    "device": "CPU"
+  },
+  
+  "test_configuration": {
+    "test_image": "test.jpg",
+    "image_size": [1920, 1080],
+    "batch_size": 1
+  },
+  
+  "accuracy_metrics": {
+    "object_detection": {
+      "mAP50": null,
+      "mAP50_95": null,
+      "precision": null,
+      "recall": null,
+      "f1_score": null
+    },
+    "classification": {
+      "accuracy": null,
+      "top5_accuracy": null
+    }
+  },
+  
+  "inference_performance": {
+    "device": "CPU",
+    "device_model": "Intel i7-12700",
+    
+    "single_image": {
+      "preprocessing_ms": null,
+      "inference_ms": null,
+      "postprocessing_ms": null,
+      "total_ms": null,
+      "fps": null
+    }
+  },
+  
+  "test_results": {
+    "example_inference": {
+      "detections": null,
+      "confidence_range": [null, null],
+      "boxes": null
+    }
+  },
+  
+  "model_info": {
+    "file": "best.onnx",
+    "size_mb": null,
+    "input_shape": [1, 3, 640, 640],
+    "output_shape": [1, 84, 8400],
+    "opset_version": 11
+  },
+  
+  "comparison_with_pt": {
+    "accuracy_match": null,
+    "accuracy_drop_percent": null,
+    "detections_match": null,
+    "confidence_drop": null,
+    "notes": [
+      "ONNX should match PT model 100%",
+      "If accuracy drop > 1%, check export settings",
+      "Confidence drop should be < 0.01"
+    ]
+  },
+  
+  "validation": {
+    "passed": null,
+    "issues": [],
+    "notes": "ONNX export verification"
+  }
+}

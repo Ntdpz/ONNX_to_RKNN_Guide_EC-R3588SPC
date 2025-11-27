@@ -1,0 +1,116 @@
+# ========================================
+# Training Source Configuration
+# ========================================
+# Model: Bun Detection (YOLOv8)
+# Phase: 1 (PyTorch Training)
+# Created: 2025-11-27
+
+# ========================================
+# MODEL INFORMATION
+# ========================================
+model:
+  name: "bun_detection"
+  version: "1.0.0"
+  type: "YOLOv8"
+  task: "object_detection"
+  created_date: "2025-11-27"
+  author: "Firefly Team"
+  description: "YOLOv8 model for detecting buns (Thai steamed buns)"
+
+# ========================================
+# CLASS INFORMATION
+# ========================================
+classes:
+  names:
+    - "bun"
+  num_classes: 1
+
+# ========================================
+# INPUT SETTINGS (🔒 CRITICAL!)
+# ========================================
+input:
+  size: [640, 640]                # 🔒 YOLOv8 standard size
+  channels: 3                     # 🔒 RGB
+  format: "RGB"                   # 🔒 Model expects RGB
+  dtype: "uint8"                  # 🔒 0-255 range
+  layout: "NHWC"                  # 🔒 For RKNN
+
+# ========================================
+# PREPROCESSING (🔒 CRITICAL!)
+# ========================================
+preprocessing:
+  resize:
+    method: "letterbox"           # 🔒 Maintain aspect ratio
+    
+  padding:
+    enabled: true                 # 🔒 Yes
+    color: [114, 114, 114]        # 🔒 YOLO standard gray
+    position: "center"            # 🔒 Center the image
+    
+  normalize:
+    enabled: true                 # 🔒 Yes
+    method: "divide"              # 🔒 Divide by 255
+    mean: [0, 0, 0]               # 🔒 No mean subtraction
+    std: [255, 255, 255]          # 🔒 Divide by 255
+
+# ========================================
+# TRAINING PARAMETERS
+# ========================================
+training:
+  framework: "PyTorch"
+  library: "ultralytics"
+  version: "8.0.0"
+  
+  hyperparameters:
+    epochs: 300
+    batch_size: 16
+    optimizer: "SGD"
+    learning_rate: 0.01
+    weight_decay: 0.0005
+    momentum: 0.937
+    
+  augmentation:
+    - "mosaic"
+    - "mixup"
+    - "hsv"
+    - "flip_lr"
+
+# ========================================
+# DATASET INFORMATION
+# ========================================
+dataset:
+  name: "bun_dataset"
+  train_images: 940
+  val_images: 100
+  source: "dataset_cls_stage2/train"
+
+# ========================================
+# MODEL ARCHITECTURE
+# ========================================
+architecture:
+  backbone: "CSPDarknet"
+  neck: "PANet"
+  head: "YOLOv8Head"
+  parameters: "3.2M"
+  flops: "8.7G"
+
+# ========================================
+# PERFORMANCE BASELINE
+# ========================================
+performance:
+  device: "GPU"
+  
+  metrics:
+    mAP50: 0.95
+    mAP50_95: 0.85
+    precision: 0.92
+    recall: 0.90
+    f1_score: 0.91
+
+# ========================================
+# NOTES
+# ========================================
+notes:
+  - "Training completed with 300 epochs"
+  - "Model converged well, no overfitting"
+  - "Ready for ONNX export"

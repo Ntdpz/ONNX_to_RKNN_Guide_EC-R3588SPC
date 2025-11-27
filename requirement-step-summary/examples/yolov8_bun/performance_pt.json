@@ -1,0 +1,64 @@
+{
+  "report_info": {
+    "model_name": "bun_detection",
+    "model_version": "1.0.0",
+    "model_type": "YOLOv8",
+    "task": "object_detection",
+    "test_date": "2025-11-27",
+    "device": "GPU"
+  },
+  
+  "test_configuration": {
+    "test_image": "bun.jpg",
+    "image_size": [1108, 1477],
+    "batch_size": 1
+  },
+  
+  "accuracy_metrics": {
+    "object_detection": {
+      "mAP50": 0.95,
+      "mAP50_95": 0.85,
+      "precision": 0.92,
+      "recall": 0.90,
+      "f1_score": 0.91
+    }
+  },
+  
+  "inference_performance": {
+    "device": "GPU",
+    "device_model": "NVIDIA RTX 3090",
+    
+    "single_image": {
+      "preprocessing_ms": 5.0,
+      "inference_ms": 12.0,
+      "postprocessing_ms": 3.0,
+      "total_ms": 20.0,
+      "fps": 50.0
+    }
+  },
+  
+  "test_results": {
+    "example_inference": {
+      "detections": 23,
+      "confidence_range": [0.90, 0.98],
+      "boxes": 23,
+      "notes": "All buns detected successfully"
+    }
+  },
+  
+  "model_info": {
+    "file": "best.pt",
+    "size_mb": 6.5,
+    "parameters": "3.2M",
+    "flops": "8.7G"
+  },
+  
+  "baseline": {
+    "purpose": "This is the baseline for comparison",
+    "compare_with": ["ONNX", "RKNN_FP16", "RKNN_INT8"],
+    "notes": [
+      "All future conversions should be compared against these metrics",
+      "Target: 23 detections with confidence 0.90-0.98"
+    ]
+  }
+}

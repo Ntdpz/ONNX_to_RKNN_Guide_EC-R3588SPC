@@ -1,0 +1,164 @@
+# ========================================
+# Training Source Configuration Template
+# ========================================
+# Phase: 1 (PyTorch Training)
+# Purpose: Configuration from training phase
+# Modify: ❌ NO - This represents training settings
+# Next Phase: Use this to export ONNX
+
+# ========================================
+# MODEL INFORMATION
+# ========================================
+model:
+  name: "model_name"              # REQUIRED: Your model name
+  version: "1.0.0"                # REQUIRED: Model version
+  type: "YOLOv8"                  # REQUIRED: YOLO/ResNet/CRNN/MobileNet/etc.
+  task: "object_detection"        # REQUIRED: detect/classify/segment/ocr/pose/etc.
+  created_date: "2025-11-27"      # Optional: Creation date
+  author: "Your Name"             # Optional: Model creator
+  description: "Model description"  # Optional: Brief description
+
+# ========================================
+# CLASS INFORMATION
+# ========================================
+classes:
+  names:                          # REQUIRED: List of class names
+    - "class_0"
+    - "class_1"
+    # Add more classes here
+  num_classes: 2                  # REQUIRED: Number of classes
+
+# ========================================
+# INPUT SETTINGS (🔒 CRITICAL!)
+# ========================================
+# ⚠️ These values must match training exactly!
+input:
+  size: [640, 640]                # 🔒 MUST MATCH TRAINING
+  # Common sizes:
+  # - [640, 640] for YOLOv8/v5
+  # - [224, 224] for ResNet/MobileNet
+  # - [32, 128] for CRNN text recognition
+  # - [height, width] format
+  
+  channels: 3                     # 🔒 MUST MATCH TRAINING
+  # 3 = RGB, 1 = Grayscale, 4 = RGBA
+  
+  format: "RGB"                   # 🔒 MUST MATCH TRAINING
+  # "RGB" or "BGR"
+  
+  dtype: "uint8"                  # 🔒 Data type
+  # "uint8" (0-255) or "float32" (0.0-1.0)
+  
+  layout: "NHWC"                  # 🔒 Tensor layout
+  # "NHWC" (TensorFlow) or "NCHW" (PyTorch)
+
+# ========================================
+# PREPROCESSING (🔒 CRITICAL!)
+# ========================================
+# ⚠️ Must match training preprocessing exactly!
+preprocessing:
+  resize:
+    method: "letterbox"           # 🔒 MUST MATCH TRAINING
+    # Options:
+    # - "letterbox": Maintain aspect ratio + padding (YOLO standard)
+    # - "direct": Direct resize (may distort)
+    # - "center_crop": Crop center (ResNet/ImageNet)
+    # - "resize_pad": Resize then pad
+    
+  padding:
+    enabled: true                 # 🔒 MUST MATCH TRAINING
+    color: [114, 114, 114]        # 🔒 MUST MATCH TRAINING
+    # Common values:
+    # - [114, 114, 114]: YOLO standard (gray)
+    # - [0, 0, 0]: Black padding
+    # - [255, 255, 255]: White padding
+    position: "center"            # 🔒 Padding position
+    # "center", "top_left", "bottom_right"
+    
+  normalize:
+    enabled: true                 # 🔒 MUST MATCH TRAINING
+    method: "divide"              # 🔒 Method
+    # "divide": Divide by std
+    # "standardize": (x - mean) / std
+    # "min_max": (x - min) / (max - min)
+    
+    mean: [0, 0, 0]               # 🔒 MUST MATCH TRAINING
+    std: [255, 255, 255]          # 🔒 MUST MATCH TRAINING
+    # Common normalization:
+    # YOLO:     mean=[0,0,0], std=[255,255,255]
+    # ImageNet: mean=[123.675,116.28,103.53], std=[58.395,57.12,57.375]
+    # PyTorch:  mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]
+
+# ========================================
+# TRAINING PARAMETERS (Reference Only)
+# ========================================
+# ⚠️ For documentation only - not used in conversion
+training:
+  framework: "PyTorch"            # PyTorch/TensorFlow/etc.
+  library: "ultralytics"          # ultralytics/mmdetection/detectron2/etc.
+  
+  hyperparameters:
+    epochs: 300                   # Training epochs
+    batch_size: 16                # Batch size
+    optimizer: "SGD"              # SGD/Adam/AdamW/etc.
+    learning_rate: 0.01           # Initial learning rate
+    weight_decay: 0.0005          # Weight decay
+    momentum: 0.937               # Momentum (for SGD)
+    
+  augmentation:                   # Data augmentation used
+    - "mosaic"
+    - "mixup"
+    - "hsv"
+    - "flip"
+    - "rotate"
+
+# ========================================
+# DATASET INFORMATION (Reference Only)
+# ========================================
+dataset:
+  name: "custom_dataset"          # Dataset name
+  train_images: 1000              # Number of training images
+  val_images: 100                 # Number of validation images
+  test_images: 50                 # Number of test images
+  source: "path/to/dataset"       # Dataset location
+
+# ========================================
+# MODEL ARCHITECTURE (Reference Only)
+# ========================================
+architecture:
+  backbone: "CSPDarknet"          # Backbone network
+  neck: "PANet"                   # Neck (if applicable)
+  head: "YOLOv8Head"              # Detection/classification head
+  parameters: "3.2M"              # Number of parameters
+  flops: "8.7G"                   # FLOPs (computational cost)
+
+# ========================================
+# PERFORMANCE BASELINE
+# ========================================
+# ⚠️ Record actual training results for comparison
+performance:
+  device: "GPU"                   # Training device
+  
+  metrics:
+    # Object Detection
+    mAP50: null                   # mAP at IoU=0.5
+    mAP50_95: null                # mAP at IoU=0.5:0.95
+    precision: null               # Precision
+    recall: null                  # Recall
+    f1_score: null                # F1 Score
+    
+    # Classification
+    accuracy: null                # Top-1 accuracy
+    top5_accuracy: null           # Top-5 accuracy
+    
+  inference:
+    batch_size: 1                 # Inference batch size
+    time_ms: null                 # Inference time (ms)
+    fps: null                     # Frames per second
+
+# ========================================
+# NOTES
+# ========================================
+notes:
+  - "Training completed successfully"
+  - "Add any important notes here"

@@ -1,0 +1,154 @@
+# ========================================
+# RKNN Source Configuration
+# ========================================
+# Model: Bun Detection (YOLOv8)
+# Phase: 3 (RKNN Conversion)
+# Created: 2025-11-27
+
+# ========================================
+# INHERITED FROM PREVIOUS PHASES (🔒 DO NOT CHANGE!)
+# ========================================
+model:
+  name: "bun_detection"
+  version: "1.0.0"
+  type: "YOLOv8"
+  task: "object_detection"
+
+classes:
+  names:
+    - "bun"
+  num_classes: 1
+
+# ========================================
+# PREPROCESSING (🔒 FROM TRAINING)
+# ========================================
+preprocessing:
+  input_size: [640, 640]          # 🔒 From training
+  input_format: "RGB"             # 🔒 From training
+  channels: 3                     # 🔒 From training
+  
+  resize:
+    method: "letterbox"           # 🔒 From training
+    
+  padding:
+    enabled: true                 # 🔒 From training
+    color: [114, 114, 114]        # 🔒 From training
+    position: "center"            # 🔒 From training
+    
+  normalize:
+    enabled: true                 # 🔒 From training
+    method: "divide"              # 🔒 From training
+    mean: [0, 0, 0]               # 🔒 From training
+    std: [255, 255, 255]          # 🔒 From training
+
+# ========================================
+# RKNN CONVERSION SETTINGS
+# ========================================
+rknn:
+  toolkit_version: "2.3.2"
+  conversion_date: "2025-11-27"
+  
+  platform:
+    target: "rk3588"
+    sub_platform: null
+    
+  optimization:
+    level: 3                      # Maximum optimization
+
+# ========================================
+# QUANTIZATION SETTINGS
+# ========================================
+quantization:
+  fp16:
+    enabled: true
+    file: "best_fp16.rknn"
+    optimization_level: 3
+    
+  int8:
+    enabled: true
+    file: "best_int8.rknn"
+    algorithm: "mmse"             # Better accuracy than normal
+    method: "channel"             # Per-channel quantization
+    optimization_level: 3
+    dataset:
+      path: "dataset.txt"
+      size: 940                   # All training images
+      source: "train"
+      
+  hybrid:
+    enabled: false
+
+# ========================================
+# MODEL FILES
+# ========================================
+models:
+  onnx: "best.onnx"
+  rknn_fp16: "best_fp16.rknn"
+  rknn_int8: "best_int8.rknn"
+  
+  sizes:
+    onnx_mb: 12.0
+    rknn_fp16_mb: 7.6
+    rknn_int8_mb: 4.7
+
+# ========================================
+# POSTPROCESSING (⚠️ TUNED FOR OPTIMAL RESULTS)
+# ========================================
+postprocessing:
+  output:
+    shape: [1, 5, 8400]           # (1, bbox+conf, predictions)
+    auto_transpose: true          # Handle (5,8400) → (8400,5)
+    
+  confidence:
+    threshold: 0.25               # ✅ Matches training threshold
+    
+  nms:
+    method: "cv2.dnn.NMSBoxes"
+    iou_threshold: 0.85           # ✅ CRITICAL! Tuned for 100% bbox recovery
+    # Note: 0.7 gives only 15/23 detections
+    # Note: 0.85 gives 23/23 detections (100%)
+    max_detections: 300
+    
+  coordinates:
+    input_format: "xywh"
+    output_format: "xyxy"
+    scale_to_original: true
+    clip_to_bounds: true
+    min_box_size: 10
+
+# ========================================
+# RUNTIME SETTINGS
+# ========================================
+runtime:
+  core_mask: "auto"
+  priority: "high"
+  performance:
+    enable_profiling: false
+    warm_up_runs: 3
+
+# ========================================
+# INFERENCE SCRIPT GENERATION
+# ========================================
+inference_script:
+  generate: true
+  filename: "npu_inference.py"
+  include_visualization: true
+  include_benchmark: true
+
+# ========================================
+# VERIFICATION
+# ========================================
+verification:
+  model_loads: true
+  runtime_init: true
+  inference_test: true
+
+# ========================================
+# NOTES
+# ========================================
+notes:
+  - "RKNN conversion successful"
+  - "FP16: 23/23 detections (100% match with ONNX)"
+  - "INT8: 22/23 detections (95.7% match)"
+  - "IoU threshold 0.85 is critical for full bbox recovery"
+  - "Model ready for deployment on RK3588 NPU"

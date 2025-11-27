@@ -1,0 +1,190 @@
+# ========================================
+# RKNN Source Configuration Template
+# ========================================
+# Phase: 3 (RKNN Conversion)
+# Purpose: Configuration for RKNN deployment + inherited configs
+# Modify: ⚠️ Training/preprocessing: NO, RKNN/inference: YES
+# Usage: Deploy on Rockchip NPU
+
+# ========================================
+# INHERITED FROM PREVIOUS PHASES (🔒 DO NOT CHANGE!)
+# ========================================
+model:
+  name: "model_name"              # From training
+  version: "1.0.0"                # From training
+  type: "YOLOv8"                  # From training
+  task: "object_detection"        # From training
+
+classes:
+  names:                          # From training
+    - "class_0"
+    - "class_1"
+  num_classes: 2                  # From training
+
+# ========================================
+# PREPROCESSING (🔒 FROM TRAINING)
+# ========================================
+# ⚠️ Must match training_source.yaml exactly!
+preprocessing:
+  input_size: [640, 640]          # 🔒 From training
+  input_format: "RGB"             # 🔒 From training
+  channels: 3                     # 🔒 From training
+  
+  resize:
+    method: "letterbox"           # 🔒 From training
+    
+  padding:
+    enabled: true                 # 🔒 From training
+    color: [114, 114, 114]        # 🔒 From training
+    position: "center"            # 🔒 From training
+    
+  normalize:
+    enabled: true                 # 🔒 From training
+    method: "divide"              # 🔒 From training
+    mean: [0, 0, 0]               # 🔒 From training
+    std: [255, 255, 255]          # 🔒 From training
+
+# ========================================
+# RKNN CONVERSION SETTINGS (✅ CAN CONFIGURE)
+# ========================================
+rknn:
+  toolkit_version: "2.3.2"        # RKNN-Toolkit2 version used
+  conversion_date: "2025-11-27"   # Conversion date
+  
+  platform:
+    target: "rk3588"              # ✅ CAN CHANGE
+    # Options: rk3588, rk3576, rk3562, rv1109, rv1126, rk1808, rk3399pro
+    sub_platform: null            # ✅ Specific chip variant (if needed)
+    
+  optimization:
+    level: 3                      # ✅ CAN CHANGE (0-3)
+    # 0 = No optimization
+    # 1 = Basic optimization
+    # 2 = Moderate optimization
+    # 3 = Aggressive optimization (recommended)
+
+# ========================================
+# QUANTIZATION SETTINGS (✅ CAN CONFIGURE)
+# ========================================
+quantization:
+  # FP16 Model
+  fp16:
+    enabled: true                 # ✅ Create FP16 model
+    file: "best_fp16.rknn"        # Output filename
+    optimization_level: 3         # ✅ Optimization level
+    
+  # INT8 Model
+  int8:
+    enabled: false                # ✅ Create INT8 model (true/false)
+    file: "best_int8.rknn"        # Output filename
+    
+    algorithm: "mmse"             # ✅ CAN CHANGE
+    # Options:
+    # - "normal": Fast, good for most models
+    # - "mmse": Better accuracy (recommended)
+    # - "kl_divergence": Best for some models (slow)
+    
+    method: "channel"             # ✅ CAN CHANGE
+    # Options:
+    # - "channel": Per-channel quantization (better accuracy)
+    # - "layer": Per-layer quantization (faster)
+    
+    optimization_level: 3         # ✅ Optimization level
+    
+    dataset:
+      path: "dataset.txt"         # ✅ Path to calibration dataset
+      size: 1000                  # ✅ Number of images (500-1000 recommended)
+      source: "train"             # ✅ train/val (NOT test!)
+      
+  # Hybrid Quantization (Advanced)
+  hybrid:
+    enabled: false                # ✅ Mix FP16 + INT8
+    config_file: null             # ✅ Path to hybrid config
+    # Use for critical layers that need FP16 precision
+
+# ========================================
+# MODEL FILES
+# ========================================
+models:
+  onnx: "best.onnx"               # Source ONNX file
+  rknn_fp16: "best_fp16.rknn"     # FP16 RKNN model
+  rknn_int8: "best_int8.rknn"     # INT8 RKNN model (if enabled)
+  
+  sizes:
+    onnx_mb: null                 # ONNX size (MB)
+    rknn_fp16_mb: null            # FP16 size (MB)
+    rknn_int8_mb: null            # INT8 size (MB)
+
+# ========================================
+# POSTPROCESSING (✅ CAN CONFIGURE)
+# ========================================
+postprocessing:
+  # Output format
+  output:
+    shape: [1, 5, 8400]           # Expected output shape (record only)
+    auto_transpose: true          # ✅ Auto-detect and transpose if needed
+    # true = handle both (5, 8400) and (8400, 5)
+    
+  # Confidence filtering
+  confidence:
+    threshold: 0.25               # ✅ CAN ADJUST (0.0-1.0)
+    # Recommended: Use training threshold (0.25 for YOLO)
+    # Higher = fewer detections (less false positives)
+    # Lower = more detections (may include false positives)
+    
+  # NMS (Non-Maximum Suppression)
+  nms:
+    method: "cv2.dnn.NMSBoxes"    # NMS implementation
+    iou_threshold: 0.7            # ✅ CAN ADJUST (0.0-1.0)
+    # Higher = less aggressive NMS (more overlapping boxes)
+    # Lower = more aggressive NMS (fewer overlapping boxes)
+    # Tune based on actual performance!
+    
+    max_detections: 300           # ✅ Maximum output boxes
+    
+  # Coordinate transformation
+  coordinates:
+    input_format: "xywh"          # Model output format (center format)
+    output_format: "xyxy"         # Desired output format (corner format)
+    scale_to_original: true       # Scale back to original image size
+    clip_to_bounds: true          # Clip boxes to image boundaries
+    min_box_size: 10              # ✅ Minimum box size (pixels)
+
+# ========================================
+# RUNTIME SETTINGS (✅ CAN CONFIGURE)
+# ========================================
+runtime:
+  core_mask: "auto"               # ✅ NPU core selection
+  # Options: "auto", 0, 1, 2, or combination (0|1|2)
+  
+  priority: "high"                # ✅ Process priority
+  # Options: "low", "medium", "high"
+  
+  performance:
+    enable_profiling: false       # ✅ Enable performance profiling
+    warm_up_runs: 3               # ✅ Warm-up inferences before benchmark
+
+# ========================================
+# INFERENCE SCRIPT GENERATION
+# ========================================
+inference_script:
+  generate: true                  # Auto-generate inference script
+  filename: "npu_inference.py"    # Script filename
+  include_visualization: true     # Include result visualization code
+  include_benchmark: true         # Include benchmark code
+
+# ========================================
+# VERIFICATION
+# ========================================
+verification:
+  model_loads: null               # Model loads successfully (true/false)
+  runtime_init: null              # Runtime initializes (true/false)
+  inference_test: null            # Test inference runs (true/false)
+
+# ========================================
+# NOTES
+# ========================================
+notes:
+  - "RKNN conversion successful"
+  - "Model ready for deployment on NPU"
+  - "Add tuning notes here"

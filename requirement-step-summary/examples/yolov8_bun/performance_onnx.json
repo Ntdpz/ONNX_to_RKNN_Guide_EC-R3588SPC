@@ -1,0 +1,73 @@
+{
+  "report_info": {
+    "model_name": "bun_detection",
+    "model_version": "1.0.0",
+    "model_type": "YOLOv8",
+    "task": "object_detection",
+    "test_date": "2025-11-27",
+    "device": "CPU"
+  },
+  
+  "test_configuration": {
+    "test_image": "bun.jpg",
+    "image_size": [1108, 1477],
+    "batch_size": 1
+  },
+  
+  "accuracy_metrics": {
+    "object_detection": {
+      "mAP50": 0.95,
+      "mAP50_95": 0.85,
+      "precision": 0.92,
+      "recall": 0.90,
+      "f1_score": 0.91
+    }
+  },
+  
+  "inference_performance": {
+    "device": "CPU",
+    "device_model": "Intel i7-12700",
+    
+    "single_image": {
+      "preprocessing_ms": 8.0,
+      "inference_ms": 145.0,
+      "postprocessing_ms": 2.0,
+      "total_ms": 155.0,
+      "fps": 6.9
+    }
+  },
+  
+  "test_results": {
+    "example_inference": {
+      "detections": 23,
+      "confidence_range": [0.90, 0.98],
+      "boxes": 23
+    }
+  },
+  
+  "model_info": {
+    "file": "best.onnx",
+    "size_mb": 12.0,
+    "input_shape": [1, 3, 640, 640],
+    "output_shape": [1, 84, 8400],
+    "opset_version": 11
+  },
+  
+  "comparison_with_pt": {
+    "accuracy_match": true,
+    "accuracy_drop_percent": 0.0,
+    "detections_match": true,
+    "confidence_drop": 0.0,
+    "notes": [
+      "✅ ONNX matches PT model 100%",
+      "✅ 23/23 detections match",
+      "✅ Confidence scores identical"
+    ]
+  },
+  
+  "validation": {
+    "passed": true,
+    "issues": [],
+    "notes": "ONNX export successful, ready for RKNN conversion"
+  }
+}

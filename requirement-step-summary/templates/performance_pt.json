@@ -1,0 +1,76 @@
+{
+  "report_info": {
+    "model_name": "model_name",
+    "model_version": "1.0.0",
+    "model_type": "YOLOv8",
+    "task": "object_detection",
+    "test_date": "2025-11-27",
+    "device": "GPU"
+  },
+  
+  "test_configuration": {
+    "test_image": "test.jpg",
+    "image_size": [1920, 1080],
+    "batch_size": 1
+  },
+  
+  "accuracy_metrics": {
+    "object_detection": {
+      "mAP50": null,
+      "mAP50_95": null,
+      "precision": null,
+      "recall": null,
+      "f1_score": null
+    },
+    "classification": {
+      "accuracy": null,
+      "top5_accuracy": null
+    },
+    "notes": "Record actual metrics from validation"
+  },
+  
+  "inference_performance": {
+    "device": "GPU",
+    "device_model": "NVIDIA RTX 3090",
+    
+    "single_image": {
+      "preprocessing_ms": null,
+      "inference_ms": null,
+      "postprocessing_ms": null,
+      "total_ms": null,
+      "fps": null
+    },
+    
+    "batch_inference": {
+      "batch_size": 8,
+      "total_ms": null,
+      "fps": null
+    }
+  },
+  
+  "test_results": {
+    "example_inference": {
+      "detections": null,
+      "confidence_range": [null, null],
+      "boxes": null,
+      "notes": "Record example test results"
+    }
+  },
+  
+  "model_info": {
+    "file": "best.pt",
+    "size_mb": null,
+    "parameters": "3.2M",
+    "flops": "8.7G"
+  },
+  
+  "baseline": {
+    "purpose": "This is the baseline for comparison",
+    "compare_with": ["ONNX", "RKNN_FP16", "RKNN_INT8"],
+    "notes": [
+      "All future conversions should be compared against these metrics",
+      "Accuracy drop should be < 5%",
+      "Performance may vary by hardware"
+    ]
+  }
+}

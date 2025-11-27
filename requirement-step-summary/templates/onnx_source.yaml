@@ -1,0 +1,129 @@
+# ========================================
+# ONNX Source Configuration Template
+# ========================================
+# Phase: 2 (ONNX Export)
+# Purpose: Configuration for ONNX conversion + inherited training config
+# Modify: ⚠️ Training fields: NO, Export fields: YES
+# Next Phase: Use this to convert RKNN
+
+# ========================================
+# INHERITED FROM TRAINING (🔒 DO NOT CHANGE!)
+# ========================================
+# Copy from training_source.yaml
+model:
+  name: "model_name"              # From training
+  version: "1.0.0"                # From training
+  type: "YOLOv8"                  # From training
+  task: "object_detection"        # From training
+
+classes:
+  names:                          # From training
+    - "class_0"
+    - "class_1"
+  num_classes: 2                  # From training
+
+input:
+  size: [640, 640]                # 🔒 From training
+  channels: 3                     # 🔒 From training
+  format: "RGB"                   # 🔒 From training
+  dtype: "uint8"                  # 🔒 From training
+  layout: "NHWC"                  # 🔒 From training
+
+preprocessing:
+  resize:
+    method: "letterbox"           # 🔒 From training
+  padding:
+    enabled: true                 # 🔒 From training
+    color: [114, 114, 114]        # 🔒 From training
+    position: "center"            # 🔒 From training
+  normalize:
+    enabled: true                 # 🔒 From training
+    method: "divide"              # 🔒 From training
+    mean: [0, 0, 0]               # 🔒 From training
+    std: [255, 255, 255]          # 🔒 From training
+
+# ========================================
+# EXPORT SETTINGS (✅ CAN CONFIGURE)
+# ========================================
+export:
+  tool: "ultralytics"             # ✅ torch.onnx/ultralytics/tf2onnx/etc.
+  version: "8.0.0"                # Export tool version
+  date: "2025-11-27"              # Export date
+  
+  onnx:
+    version: "1.12.0"             # ✅ ONNX version
+    opset: 11                     # ✅ ONNX opset (11-16)
+    # Recommended: 11 (stable), 13 (newer features)
+    
+    simplify: true                # ✅ Simplify ONNX graph
+    # true = smaller model, faster inference (recommended)
+    
+    dynamic_axes: false           # ✅ Dynamic input size
+    # false = fixed size (recommended for RKNN)
+    # true = variable size (may not work with RKNN)
+    
+  input_names:                    # ✅ Input tensor names
+    - "images"
+    # Custom names if needed
+    
+  output_names:                   # ✅ Output tensor names
+    - "output0"
+    # Custom names if needed
+
+# ========================================
+# ONNX MODEL INFORMATION
+# ========================================
+onnx:
+  file: "best.onnx"               # ONNX filename
+  
+  shapes:
+    input: [1, 3, 640, 640]       # NCHW format for ONNX
+    output: [1, 84, 8400]         # Output shape
+    # Record actual shapes after export
+  
+  size:
+    mb: null                      # File size in MB
+    parameters: null              # Number of parameters
+  
+  verification:
+    onnx_check: null              # ONNX checker passed (true/false)
+    inference_test: null          # Test inference passed (true/false)
+    output_match_pt: null         # Output matches PT (true/false)
+
+# ========================================
+# REQUIREMENTS FOR RKNN CONVERSION
+# ========================================
+# ⚠️ Information needed for next phase
+requirements_for_rknn:
+  # Critical values that RKNN needs (from training)
+  preprocessing:
+    input_size: [640, 640]        # 🔒 For RKNN config
+    input_format: "RGB"           # 🔒 For RKNN config
+    resize_method: "letterbox"    # 🔒 For inference script
+    padding_color: [114, 114, 114]  # 🔒 For inference script
+    normalize:
+      mean: [0, 0, 0]             # 🔒 For RKNN build
+      std: [255, 255, 255]        # 🔒 For RKNN build
+  
+  # Model info for RKNN
+  model_info:
+    type: "YOLOv8"                # For auto-detection
+    task: "object_detection"      # For template selection
+    classes: ["class_0", "class_1"]  # For inference script
+    num_classes: 2                # For postprocessing
+  
+  # Recommended RKNN settings
+  recommended:
+    platform: "rk3588"            # Target platform
+    quantization_fp16: true       # FP16 for accuracy
+    quantization_int8: true       # INT8 for speed
+    optimization_level: 3         # Maximum optimization
+    dataset_size: 500-1000        # For INT8 calibration
+
+# ========================================
+# NOTES
+# ========================================
+notes:
+  - "ONNX export successful"
+  - "Verified output matches PyTorch model"
+  - "Ready for RKNN conversion"
