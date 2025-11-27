@@ -423,19 +423,22 @@ Examples:
   # Basic FP16 conversion
   python3 universal_onnx_to_rknn.py \\
       --onnx model.onnx \\
-      --rknn model_fp16.rknn
+      --model-name my_model \\
+      --output-name model_fp16.rknn
 
   # INT8 quantization with dataset
   python3 universal_onnx_to_rknn.py \\
       --onnx model.onnx \\
-      --rknn model_int8.rknn \\
+      --model-name my_model \\
+      --output-name model_int8.rknn \\
       --quantize \\
       --dataset dataset.txt
 
   # Full configuration
   python3 universal_onnx_to_rknn.py \\
       --onnx model.onnx \\
-      --rknn model.rknn \\
+      --model-name my_model \\
+      --output-name model.rknn \\
       --platform rk3588 \\
       --quantize \\
       --dtype INT8 \\
@@ -450,7 +453,8 @@ Examples:
   # Different platforms
   python3 universal_onnx_to_rknn.py \\
       --onnx model.onnx \\
-      --rknn model_rk3576.rknn \\
+      --model-name my_model \\
+      --output-name model_rk3576.rknn \\
       --platform rk3576
 
 Supported Platforms:
@@ -470,14 +474,20 @@ Optimization Levels:
   - 1: Basic optimization
   - 2: Moderate optimization
   - 3: Aggressive optimization (recommended)
+
+Output Location:
+  All .rknn files will be saved to:
+  /home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC/Model-AI/<model-name>/
         """
     )
     
     # Required arguments
     parser.add_argument('--onnx', '-i', required=True,
                         help='Path to input ONNX model file')
-    parser.add_argument('--rknn', '-o', required=True,
-                        help='Path to output RKNN model file')
+    parser.add_argument('--model-name', '-m', required=True,
+                        help='Model name (creates folder: Model-AI/<model-name>/)')
+    parser.add_argument('--output-name', '-o', required=True,
+                        help='Output .rknn filename (e.g., model_fp16.rknn)')
     
     # Platform settings
     parser.add_argument('--platform', '-p', default='rk3588',
@@ -536,6 +546,19 @@ Optimization Levels:
     
     args = parser.parse_args()
     
+    # Construct output path: Model-AI/<model-name>/<output-name>
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)  # Go up one level from onnx_to_rknn_converter/
+    model_ai_dir = os.path.join(project_root, 'Model-AI', args.model_name)
+    
+    # Create Model-AI/<model-name>/ directory if it doesn't exist
+    if not os.path.exists(model_ai_dir):
+        os.makedirs(model_ai_dir)
+        print(f"\n📁 Created model directory: {model_ai_dir}")
+    
+    # Full path to output RKNN file
+    rknn_path = os.path.join(model_ai_dir, args.output_name)
+    
     # Prepare parameters
     mean_values = [[args.mean[0], args.mean[1], args.mean[2]]] if args.mean else None
     std_values = [[args.std[0], args.std[1], args.std[2]]] if args.std else None
@@ -547,7 +570,7 @@ Optimization Levels:
     # Convert model
     success = converter.convert(
         onnx_path=args.onnx,
-        rknn_path=args.rknn,
+        rknn_path=rknn_path,
         target_platform=args.platform,
         target_sub_platform=args.sub_platform,
         quantize=args.quantize,
@@ -567,7 +590,7 @@ Optimization Levels:
     
     # Verify if requested
     if success and args.verify:
-        converter.verify_model(args.rknn, args.platform)
+        converter.verify_model(rknn_path, args.platform)
     
     sys.exit(0 if success else 1)
 
