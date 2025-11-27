@@ -102,32 +102,32 @@ def main():
   # สร้าง dataset.txt จากโฟลเดอร์ (รวมโฟลเดอร์ย่อย)
   python3 create_dataset_txt.py \\
     --images ./dataset/train \\
-    --output dataset.txt
+    --name mydataset
   
   # จำกัดจำนวนรูปภาพ
   python3 create_dataset_txt.py \\
     --images ./dataset/train \\
-    --output dataset.txt \\
+    --name mydataset \\
     --max-files 500
   
   # สแกนเฉพาะโฟลเดอร์เดียว (ไม่รวมโฟลเดอร์ย่อย)
   python3 create_dataset_txt.py \\
     --images ./images \\
-    --output dataset.txt \\
+    --name mydataset \\
     --no-recursive
   
   # ใช้กับ dataset หลายประเภท
   python3 create_dataset_txt.py \\
     -i /path/to/yolov5/train/images \\
-    -o yolov5_dataset.txt \\
+    -d yolov5 \\
     -n 1000
         """
     )
     
     parser.add_argument('-i', '--images', required=True,
                         help='โฟลเดอร์ที่เก็บรูปภาพ (รองรับ absolute หรือ relative path)')
-    parser.add_argument('-o', '--output', default='dataset.txt',
-                        help='ชื่อไฟล์ output (default: dataset.txt)')
+    parser.add_argument('-d', '--name', required=True,
+                        help='ชื่อ dataset (จะถูกใช้เป็น <name>_dataset.txt)')
     parser.add_argument('-n', '--max-files', type=int, default=None,
                         help='จำนวนไฟล์สูงสุด (default: ไม่จำกัด)')
     parser.add_argument('--no-recursive', action='store_true',
@@ -137,11 +137,21 @@ def main():
     
     # แปลง path เป็น absolute path
     img_dir = os.path.abspath(args.images)
-    output_file = args.output
+    
+    # กำหนด output directory และชื่อไฟล์
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, 'output')
+    output_file = os.path.join(output_dir, f"{args.name}_dataset.txt")
+    
+    # สร้างโฟลเดอร์ output ถ้ายังไม่มี
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"📁 สร้างโฟลเดอร์ output: {output_dir}\n")
     
     print("\n🚀 Dataset List Creator")
     print("=" * 60)
     print(f"📂 Input directory: {img_dir}")
+    print(f"📝 Dataset name: {args.name}")
     print(f"💾 Output file: {output_file}")
     if args.max_files:
         print(f"🔢 Max files: {args.max_files}")

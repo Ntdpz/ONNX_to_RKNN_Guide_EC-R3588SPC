@@ -14,80 +14,145 @@
 - ✅ จำกัดจำนวนรูปภาพได้
 - ✅ รองรับ Image Formats: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.tiff`, `.webp`
 - ✅ ใช้งานผ่าน Command-line Arguments
+- ✅ บันทึกไฟล์อัตโนมัติใน `output/` folder
+- ✅ ตั้งชื่อไฟล์แบบ `<dataset>_dataset.txt`
+
+---
+
+## 📂 โครงสร้างโฟลเดอร์
+
+```
+Data-set/
+├── README.md                      # ไฟล์คู่มือนี้
+├── create_dataset_txt.py          # สคริปต์สร้าง dataset.txt
+├── bun_stage1_detection/          # Raw dataset สำหรับ detection
+│   ├── train/
+│   ├── valid/
+│   └── test/
+├── dataset_cls_stage2/            # Raw dataset สำหรับ classification
+│   ├── train/
+│   └── valid/
+└── output/                        # 📁 ไฟล์ output ทั้งหมดจะอยู่ที่นี่
+    ├── bun_train_dataset.txt      # ตัวอย่างไฟล์ output
+    ├── bun_valid_dataset.txt
+    └── ...
+```
+
+**หมายเหตุ:** 
+- โฟลเดอร์ `output/` จะถูกสร้างอัตโนมัติเมื่อรันสคริปต์ครั้งแรก
+- ไฟล์ output ทั้งหมดจะถูกบันทึกใน `output/` เท่านั้น
 
 ---
 
 ## 🚀 วิธีการใช้งาน
 
-### การใช้งานพื้นฐาน
+### ⚙️ Syntax พื้นฐาน
 
 ```bash
-python3 create_dataset_txt.py -i <โฟลเดอร์รูปภาพ> -o <ไฟล์output>
+python3 create_dataset_txt.py -i <โฟลเดอร์รูปภาพ> -d <ชื่อ dataset>
 ```
 
-### ตัวอย่างที่ 1: สร้าง dataset.txt จากโฟลเดอร์ทั้งหมด
+**สิ่งที่ต้องรู้:**
+- ไฟล์ output จะถูกบันทึกอัตโนมัติที่ `output/<ชื่อdataset>_dataset.txt`
+- ไม่ต้องระบุ path ของไฟล์ output
+- โฟลเดอร์ `output/` จะถูกสร้างอัตโนมัติถ้ายังไม่มี
+
+---
+
+## 📖 Step-by-Step Guide
+
+### Step 1: เตรียม Dataset
+
+วางรูปภาพไว้ในโฟลเดอร์ที่ต้องการ เช่น:
+- `bun_stage1_detection/train/images/` (สำหรับ YOLO detection)
+- `dataset_cls_stage2/train/` (สำหรับ classification)
+
+### Step 2: เปิด Terminal ที่โฟลเดอร์ Data-set
+
+```bash
+cd /home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC/Data-set
+```
+
+### Step 3: รันสคริปต์
+
+```bash
+python3 create_dataset_txt.py -i <โฟลเดอร์รูปภาพ> -d <ชื่อdataset>
+```
+
+### Step 4: ตรวจสอบผลลัพธ์
+
+ไฟล์ output จะอยู่ที่ `output/<ชื่อdataset>_dataset.txt`
+
+```bash
+ls -lh output/
+cat output/<ชื่อdataset>_dataset.txt | head -10
+```
+
+---
+
+## 💡 ตัวอย่างการใช้งาน
+
+### ตัวอย่างที่ 1: สร้าง dataset.txt สำหรับ Training Set
 
 ```bash
 python3 create_dataset_txt.py \
-    --images ./dataset_cls_stage2/train \
-    --output dataset.txt
+    -i ./bun_stage1_detection/train/images \
+    -d bun_train
 ```
 
-**ผลลัพธ์:** สร้างไฟล์ `dataset.txt` ที่มีรายการรูปภาพทั้งหมดในโฟลเดอร์ (รวมโฟลเดอร์ย่อย)
+**ผลลัพธ์:** 
+- ไฟล์ที่สร้าง: `output/bun_train_dataset.txt`
+- สแกนรูปภาพทั้งหมดในโฟลเดอร์ (รวมโฟลเดอร์ย่อย)
 
-### ตัวอย่างที่ 2: จำกัดจำนวนรูปภาพ
+### ตัวอย่างที่ 2: สร้าง dataset.txt สำหรับ Validation Set
+
+```bash
+python3 create_dataset_txt.py \
+    -i ./bun_stage1_detection/valid/images \
+    -d bun_valid
+```
+
+**ผลลัพธ์:** 
+- ไฟล์ที่สร้าง: `output/bun_valid_dataset.txt`
+
+### ตัวอย่างที่ 3: จำกัดจำนวนรูปภาพ (500 รูป)
 
 ```bash
 python3 create_dataset_txt.py \
     -i ./dataset_cls_stage2/train \
-    -o dataset.txt \
+    -d cls_train \
     -n 500
 ```
 
-**ผลลัพธ์:** สร้างไฟล์ `dataset.txt` ที่มีรายการรูปภาพ **500 รูปแรก**
+**ผลลัพธ์:** 
+- ไฟล์ที่สร้าง: `output/cls_train_dataset.txt`
+- มีรายการรูปภาพ **500 รูปแรก**
 
-### ตัวอย่างที่ 3: สแกนเฉพาะโฟลเดอร์เดียว (ไม่รวมโฟลเดอร์ย่อย)
+### ตัวอย่างที่ 4: สแกนเฉพาะโฟลเดอร์เดียว (ไม่รวมโฟลเดอร์ย่อย)
 
 ```bash
 python3 create_dataset_txt.py \
     -i ./images \
-    -o dataset.txt \
+    -d mydata \
     --no-recursive
 ```
 
-**ผลลัพธ์:** สแกนเฉพาะไฟล์ที่อยู่ในโฟลเดอร์ `images` เท่านั้น (ไม่เข้าไปในโฟลเดอร์ย่อย)
+**ผลลัพธ์:** 
+- ไฟล์ที่สร้าง: `output/mydata_dataset.txt`
+- สแกนเฉพาะไฟล์ในโฟลเดอร์ `images` ไม่เข้าไปในโฟลเดอร์ย่อย
 
-### ตัวอย่างที่ 4: ใช้กับ YOLO Dataset
+### ตัวอย่างที่ 5: ใช้ Absolute Path
 
 ```bash
 python3 create_dataset_txt.py \
-    -i /path/to/yolov5/train/images \
-    -o yolov5_calibration.txt \
+    -i /home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC/Data-set/bun_stage1_detection/train/images \
+    -d bun_full \
     -n 1000
 ```
 
-### ตัวอย่างที่ 5: ใช้กับ Classification Dataset หลาย Classes
-
-```bash
-python3 create_dataset_txt.py \
-    -i ./classification_dataset/train \
-    -o classification_dataset.txt \
-    -n 200
-```
-
-**โครงสร้างโฟลเดอร์:**
-```
-classification_dataset/train/
-├── class1/
-│   ├── img001.jpg
-│   ├── img002.jpg
-│   └── ...
-├── class2/
-│   ├── img001.jpg
-│   └── ...
-└── class3/
-    └── ...
-```
+**ผลลัพธ์:** 
+- ไฟล์ที่สร้าง: `output/bun_full_dataset.txt`
+- จำกัด 1000 รูป
 
 ---
 
@@ -96,16 +161,41 @@ classification_dataset/train/
 | Parameter | Short | Required | Default | Description |
 |-----------|-------|----------|---------|-------------|
 | `--images` | `-i` | ✅ Yes | - | โฟลเดอร์ที่เก็บรูปภาพ (รองรับ absolute/relative path) |
-| `--output` | `-o` | ❌ No | `dataset.txt` | ชื่อไฟล์ output |
+| `--name` | `-d` | ✅ Yes | - | ชื่อ dataset (จะถูกใช้เป็น `<name>_dataset.txt`) |
 | `--max-files` | `-n` | ❌ No | `None` | จำนวนไฟล์สูงสุด (ไม่ระบุ = ทั้งหมด) |
 | `--no-recursive` | - | ❌ No | `False` | ไม่สแกนโฟลเดอร์ย่อย |
 | `--help` | `-h` | ❌ No | - | แสดงคำแนะนำการใช้งาน |
+
+**หมายเหตุ:**
+- ไฟล์ output จะถูกบันทึกอัตโนมัติที่ `output/<name>_dataset.txt`
+- ไม่ต้องระบุพารามิเตอร์ `--output` อีกต่อไป
 
 ---
 
 ## 📂 รูปแบบไฟล์ Output
 
-ไฟล์ `dataset.txt` จะมีรูปแบบดังนี้ (รายการ absolute path ของรูปภาพ):
+### ตำแหน่งไฟล์
+
+ไฟล์ทั้งหมดจะถูกบันทึกที่:
+```
+/home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC/Data-set/output/
+```
+
+### รูปแบบชื่อไฟล์
+
+```
+<ชื่อdataset>_dataset.txt
+```
+
+**ตัวอย่าง:**
+- `bun_train_dataset.txt`
+- `bun_valid_dataset.txt`
+- `cls_train_dataset.txt`
+- `yolov8_calibration_dataset.txt`
+
+### เนื้อหาภายในไฟล์
+
+ไฟล์จะมีรูปแบบดังนี้ (รายการ absolute path ของรูปภาพ):
 
 ```
 /home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC/Data-set/dataset_cls_stage2/train/class1/image001.jpg
@@ -120,22 +210,28 @@ classification_dataset/train/
 
 ## 🔍 การตรวจสอบผลลัพธ์
 
-### ดูจำนวนรูปภาพทั้งหมด
+### ดูไฟล์ทั้งหมดในโฟลเดอร์ output
 
 ```bash
-wc -l dataset.txt
+ls -lh output/
+```
+
+### ดูจำนวนรูปภาพในไฟล์
+
+```bash
+wc -l output/bun_train_dataset.txt
 ```
 
 ### ดู 10 บรรทัดแรก
 
 ```bash
-head -10 dataset.txt
+head -10 output/bun_train_dataset.txt
 ```
 
 ### ตรวจสอบว่ามีไฟล์จริง
 
 ```bash
-head -1 dataset.txt | xargs ls -lh
+head -1 output/bun_train_dataset.txt | xargs ls -lh
 ```
 
 ---
@@ -148,10 +244,12 @@ head -1 dataset.txt | xargs ls -lh
 
 ```bash
 python3 create_dataset_txt.py \
-    -i ./train_images \
-    -o calibration_dataset.txt \
+    -i ./bun_stage1_detection/train/images \
+    -d bun_calibration \
     -n 500
 ```
+
+**Output:** `output/bun_calibration_dataset.txt`
 
 **ทำไมต้องใช้รูปจาก training dataset?**
 - รูปภาพต้องมีลักษณะคล้ายกับข้อมูลที่โมเดลจะใช้งานจริง
@@ -165,9 +263,11 @@ python3 create_dataset_txt.py \
 ```bash
 python3 create_dataset_txt.py \
     -i ./large_dataset/train \
-    -o dataset.txt \
+    -d large_data \
     -n 1000
 ```
+
+**Output:** `output/large_data_dataset.txt`
 
 **เหตุผล:**
 - ลดเวลาในการทำ quantization
@@ -177,10 +277,12 @@ python3 create_dataset_txt.py \
 
 ```bash
 python3 create_dataset_txt.py \
-    -i ./classification/train \
-    -o dataset.txt \
+    -i ./dataset_cls_stage2/train \
+    -d cls_multi \
     -n 200
 ```
+
+**Output:** `output/cls_multi_dataset.txt`
 
 **โฟลเดอร์ต้องมีโครงสร้าง:**
 ```
@@ -195,10 +297,12 @@ train/
 
 ```bash
 python3 create_dataset_txt.py \
-    -i ./yolo_dataset/train/images \
-    -o yolo_dataset.txt \
+    -i ./bun_stage1_detection/train/images \
+    -d yolo_bun \
     -n 800
 ```
+
+**Output:** `output/yolo_bun_dataset.txt`
 
 **หมายเหตุ:** ใช้เฉพาะโฟลเดอร์ `images` ไม่ต้องใช้โฟลเดอร์ `labels`
 
@@ -216,10 +320,14 @@ python3 create_dataset_txt.py \
 ls -la /path/to/folder
 
 # ใช้ absolute path
-python3 create_dataset_txt.py -i /absolute/path/to/images -o dataset.txt
+python3 create_dataset_txt.py \
+    -i /absolute/path/to/images \
+    -d mydataset
 
 # หรือใช้ relative path จาก directory ปัจจุบัน
-python3 create_dataset_txt.py -i ./images -o dataset.txt
+python3 create_dataset_txt.py \
+    -i ./images \
+    -d mydataset
 ```
 
 ### ⚠️ Warning: "ไม่พบไฟล์รูปภาพในโฟลเดอร์ที่ระบุ"
@@ -242,49 +350,99 @@ ls /path/to/images
 **วิธีแก้:**
 ```bash
 # ไม่จำกัดจำนวน (ลบ -n ออก)
-python3 create_dataset_txt.py -i ./images -o dataset.txt
+python3 create_dataset_txt.py -i ./images -d mydataset
 
 # ตรวจสอบว่าสแกนโฟลเดอร์ย่อยหรือไม่ (ต้องไม่มี --no-recursive)
-python3 create_dataset_txt.py -i ./images -o dataset.txt
+python3 create_dataset_txt.py -i ./images -d mydataset
+```
+
+### 📁 ไม่พบโฟลเดอร์ output
+
+**วิธีแก้:** โฟลเดอร์จะถูกสร้างอัตโนมัติเมื่อรันสคริปต์ ถ้ายังไม่มีให้สร้างด้วยตัวเอง:
+
+```bash
+mkdir -p output
 ```
 
 ---
 
 ## 📝 ตัวอย่างการใช้งานกับ RKNN Converter
 
-หลังจากสร้าง `dataset.txt` แล้ว นำไปใช้กับการแปลง ONNX → RKNN:
+หลังจากสร้างไฟล์ dataset.txt แล้ว นำไปใช้กับการแปลง ONNX → RKNN:
+
+### Step 1: สร้างไฟล์ dataset
 
 ```bash
-# แปลง ONNX เป็น RKNN พร้อม INT8 Quantization
-python3 onnx_to_rknn_converter.py \
-    --onnx model.onnx \
-    --rknn model_int8.rknn \
-    --quantize \
-    --dataset ./dataset.txt
+cd /home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC/Data-set
+
+python3 create_dataset_txt.py \
+    -i ./bun_stage1_detection/train/images \
+    -d bun_train \
+    -n 500
 ```
+
+**ผลลัพธ์:** `output/bun_train_dataset.txt`
+
+### Step 2: ใช้กับ RKNN Converter
+
+```bash
+cd /home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC
+
+# แปลง ONNX เป็น RKNN พร้อม INT8 Quantization
+python3 onnx_to_rknn_converter/universal_onnx_to_rknn.py \
+    --onnx Model-AI/bun_stage1_detection/best.onnx \
+    --rknn Model-AI/bun_stage1_detection/best_int8.rknn \
+    --quantize \
+    --dataset Data-set/output/bun_train_dataset.txt
+```
+
+**หมายเหตุ:** 
+- ใช้ path แบบ relative จากโฟลเดอร์โปรเจค
+- ไฟล์ dataset.txt อยู่ใน `Data-set/output/`
 
 ---
 
-## 🎯 สรุป
+## 🎯 สรุป Quick Reference
 
-| สถานการณ์ | คำสั่งที่แนะนำ |
-|-----------|---------------|
-| ใช้รูปทั้งหมดในโฟลเดอร์ | `python3 create_dataset_txt.py -i ./train -o dataset.txt` |
-| จำกัด 500 รูป | `python3 create_dataset_txt.py -i ./train -o dataset.txt -n 500` |
-| สแกนเฉพาะโฟลเดอร์เดียว | `python3 create_dataset_txt.py -i ./images -o dataset.txt --no-recursive` |
-| ใช้กับ YOLO dataset | `python3 create_dataset_txt.py -i ./train/images -o dataset.txt -n 800` |
-| ใช้กับ Classification | `python3 create_dataset_txt.py -i ./train -o dataset.txt -n 200` |
+| สถานการณ์ | คำสั่งที่แนะนำ | Output File |
+|-----------|---------------|-------------|
+| ใช้รูปทั้งหมดในโฟลเดอร์ | `python3 create_dataset_txt.py -i ./train -d mytrain` | `output/mytrain_dataset.txt` |
+| จำกัด 500 รูป | `python3 create_dataset_txt.py -i ./train -d mytrain -n 500` | `output/mytrain_dataset.txt` |
+| สแกนเฉพาะโฟลเดอร์เดียว | `python3 create_dataset_txt.py -i ./images -d mydata --no-recursive` | `output/mydata_dataset.txt` |
+| ใช้กับ YOLO dataset | `python3 create_dataset_txt.py -i ./train/images -d yolo_train -n 800` | `output/yolo_train_dataset.txt` |
+| ใช้กับ Classification | `python3 create_dataset_txt.py -i ./train -d cls_train -n 200` | `output/cls_train_dataset.txt` |
+
+### ตำแหน่งไฟล์
+
+- **Script:** `/home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC/Data-set/create_dataset_txt.py`
+- **Output Folder:** `/home/nz/firefly/ONNX_to_RKNN_Guide_EC-R3588SPC/Data-set/output/`
+- **Raw Datasets:** 
+  - `bun_stage1_detection/` - สำหรับ detection
+  - `dataset_cls_stage2/` - สำหรับ classification
 
 ---
 
 ## 📚 Reference
 
 - **RKNN Toolkit2 Documentation:** [Official Docs](https://github.com/rockchip-linux/rknn-toolkit2)
-- **INT8 Quantization Guide:** ดูใน `Custom_Model_to_RKNN_Guide_v2.3.2.md`
-- **ONNX to RKNN Converter:** ดูใน `onnx_to_rknn_converter.py`
+- **INT8 Quantization Guide:** ดูใน `../Doc/Custom_Model_to_RKNN_Guide_v2.3.2.md`
+- **ONNX to RKNN Converter:** ดูใน `../onnx_to_rknn_converter/universal_onnx_to_rknn.py`
 
 ---
 
-**Last Updated:** November 26, 2025  
-**Version:** 1.0  
+## 📋 Changelog
+
+### Version 2.0 (November 27, 2025)
+- ✅ เปลี่ยนจาก `--output` เป็น `--name` parameter
+- ✅ ไฟล์ output จะถูกบันทึกอัตโนมัติใน `output/` folder
+- ✅ รูปแบบชื่อไฟล์เป็น `<name>_dataset.txt`
+- ✅ สร้างโฟลเดอร์ `output/` อัตโนมัติ
+
+### Version 1.0 (November 26, 2025)
+- ✅ เวอร์ชันแรก - รองรับการสร้าง dataset.txt พื้นฐาน
+
+---
+
+**Last Updated:** November 27, 2025  
+**Version:** 2.0  
 **Compatible with:** RKNN-Toolkit2 v2.3.0+

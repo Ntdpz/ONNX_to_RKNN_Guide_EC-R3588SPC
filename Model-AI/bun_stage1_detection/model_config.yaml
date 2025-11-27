@@ -1,0 +1,258 @@
+# ============================================================
+# YOLOv8 Stage 1 Detection Model Configuration
+# ============================================================
+# Model: Bun Detection (Object Localization)
+# Purpose: Two-Stage Detection System - Stage 1
+# Created: November 26, 2025
+# ============================================================
+
+# Model Information
+model_info:
+  name: "YOLOv8n Bun Detection FP16 300 Epochs"
+  version: "1.0"
+  task: "object_detection"
+  stage: 1
+  description: "Lightweight YOLOv8 nano model for detecting bun positions with FP16 precision"
+  framework: "PyTorch (Ultralytics YOLOv8)"
+  architecture: "YOLOv8n"
+  
+# Model Files
+model_files:
+  pytorch_model: "D:\\bun-yoloV5\\TWO_STAGE_DETECTION\\Model-AI\\bun_stage1_fp16_300ep\\weights\\best.pt"
+  onnx_model: "D:\\bun-yoloV5\\TWO_STAGE_DETECTION\\Model-AI\\bun_stage1_fp16_300ep\\weights\\best.onnx"
+  last_checkpoint: "D:\\bun-yoloV5\\TWO_STAGE_DETECTION\\Model-AI\\bun_stage1_fp16_300ep\\weights\\last.pt"
+  
+# Model Metrics (Best Results)
+performance:
+  precision: 0.9997          # Precision at epoch 300
+  recall: 1.0000             # Recall at epoch 300
+  mAP50: 0.9950              # mAP@0.5 at epoch 300
+  mAP50_95: 0.9147           # mAP@0.5:0.95 at epoch 300
+  
+  # Training Losses (Final Epoch)
+  train_box_loss: 0.34718
+  train_cls_loss: 0.33278
+  train_dfl_loss: 0.81624
+  
+  # Validation Losses (Final Epoch)
+  val_box_loss: 0.40333
+  val_cls_loss: 0.31042
+  val_dfl_loss: 0.83333
+  
+  # Model Size
+  parameters: 3011043         # ~3M parameters
+  gflops: 8.2                 # Computational complexity
+  model_size_mb: 11.7         # ONNX file size
+  
+# Input Specifications
+input:
+  format: "RGB"
+  type: "image"
+  shape: [1, 3, 640, 640]     # NCHW format (Batch, Channels, Height, Width)
+  height: 640
+  width: 640
+  channels: 3
+  color_space: "RGB"
+  data_type: "float32"
+  
+  # Normalization (Pixel values 0-255 → 0-1)
+  normalization:
+    method: "division"
+    scale: 255.0              # Divide by 255
+    mean: [0.0, 0.0, 0.0]     # No mean subtraction
+    std: [255.0, 255.0, 255.0] # Equivalent to division by 255
+  
+  # Preprocessing
+  preprocessing:
+    resize_mode: "letterbox"  # Maintain aspect ratio with padding
+    padding_color: [114, 114, 114]  # Gray padding
+    interpolation: "bilinear"
+    
+# Output Specifications
+output:
+  format: "tensor"
+  shape: [1, 5, 8400]         # [batch, attributes, detections]
+  
+  # Output Structure
+  # Dimension 0: Batch size (always 1 for static)
+  # Dimension 1: 5 attributes per detection
+  #   - [0]: x_center (normalized 0-1)
+  #   - [1]: y_center (normalized 0-1)
+  #   - [2]: width (normalized 0-1)
+  #   - [3]: height (normalized 0-1)
+  #   - [4]: objectness confidence (0-1)
+  # Dimension 2: 8400 detection candidates
+  #   - 80x80 grid = 6400 detections
+  #   - 40x40 grid = 1600 detections
+  #   - 20x20 grid = 400 detections
+  #   - Total = 8400
+  
+  num_detections: 8400
+  num_attributes: 5
+  num_classes: 1
+  class_names: ["bun"]
+  
+  # Post-processing (Done outside NPU)
+  post_processing:
+    required: true
+    steps:
+      - "decode_boxes"        # Convert xywh to xyxy
+      - "apply_confidence_threshold"
+      - "nms"                 # Non-Maximum Suppression
+    
+    # Recommended Thresholds
+    confidence_threshold: 0.25
+    iou_threshold: 0.7
+    max_detections: 300
+    
+# ONNX Export Configuration
+onnx_export:
+  opset_version: 12           # RKNN recommended
+  input_names: ["images"]
+  output_names: ["output0"]
+  dynamic_axes: null          # Static shape only (RKNN requirement)
+  simplify: true
+  optimize: true
+  
+  # ONNX Model Info
+  ir_version: 7
+  producer: "pytorch"
+  
+# Training Configuration
+training:
+  epochs: 300
+  batch_size: 16
+  image_size: 640
+  
+  # Optimizer
+  optimizer: "AdamW"
+  initial_lr: 0.001           # lr0
+  final_lr: 0.00001           # lr0 * lrf (0.001 * 0.01)
+  momentum: 0.937
+  weight_decay: 0.0005
+  
+  # Learning Rate Schedule
+  lr_schedule:
+    type: "linear"
+    warmup_epochs: 3.0
+    warmup_momentum: 0.8
+    warmup_bias_lr: 0.1
+  
+  # Loss Weights
+  loss_weights:
+    box: 7.5                  # Box loss weight
+    cls: 0.5                  # Classification loss weight
+    dfl: 1.5                  # Distribution Focal Loss weight
+    
+  # Augmentation
+  augmentation:
+    hsv_h: 0.015              # Hue augmentation
+    hsv_s: 0.7                # Saturation augmentation
+    hsv_v: 0.4                # Value augmentation
+    degrees: 0.0              # Rotation
+    translate: 0.1            # Translation
+    scale: 0.5                # Scale
+    shear: 0.0                # Shear
+    perspective: 0.0          # Perspective
+    flipud: 0.0               # Vertical flip
+    fliplr: 0.5               # Horizontal flip (50%)
+    mosaic: 1.0               # Mosaic augmentation
+    mixup: 0.0                # Mixup disabled
+    copy_paste: 0.0           # Copy-paste disabled
+    auto_augment: "randaugment"
+    
+  # Regularization
+  dropout: 0.0
+  close_mosaic: 10            # Disable mosaic last 10 epochs
+  
+# Precision & Hardware
+precision:
+  training: "FP16"            # Mixed precision training (AMP)
+  inference: "FP16"           # Half precision for inference
+  amp_enabled: true
+  
+hardware:
+  device: "CUDA:0"
+  gpu_model: "NVIDIA GeForce RTX 3050 Ti Laptop GPU"
+  gpu_memory: "4096 MB"
+  workers: 8
+  
+# Dataset Information
+dataset:
+  name: "bun_stage1_detection"
+  path: "D:\\bun-yoloV5\\TWO_STAGE_DETECTION\\Data-set\\bun_stage1_detection"
+  yaml: "D:\\bun-yoloV5\\TWO_STAGE_DETECTION\\Data-set\\bun_stage1_detection\\data.yaml"
+  
+  splits:
+    train: 40
+    valid: 10
+    test: 10
+    
+  classes:
+    nc: 1
+    names: ["bun"]
+    
+# Deployment Configuration
+deployment:
+  target_platform: "RKNN"
+  target_chips: 
+    - "RK3588"
+    - "RK3576"
+    - "RK3566"
+    - "RK3568"
+  
+  # RKNN Conversion Settings
+  rknn_config:
+    target_platform: "rk3588"
+    quantization: true
+    quantization_type: "INT8"  # or "MIXED" (INT8 + FP16)
+    
+    # Normalization for RKNN
+    mean_values: [[0, 0, 0]]
+    std_values: [[255, 255, 255]]
+    
+    # Optimization
+    optimize_level: 3
+    
+# Model Capabilities
+capabilities:
+  batch_inference: false      # Static batch size = 1
+  dynamic_shape: false        # Fixed input size
+  gpu_acceleration: true
+  npu_acceleration: true      # After RKNN conversion
+  fp16_inference: true
+  int8_inference: true        # After quantization
+  
+# Limitations
+limitations:
+  single_class_only: true
+  static_input_size: true
+  no_post_processing_in_model: true  # NMS done externally
+  max_batch_size: 1
+  
+# Integration Notes
+integration:
+  stage1_output_used_by: "Stage 2 Classifier"
+  pipeline: "Two-Stage Detection"
+  
+  workflow:
+    - "Input image → Stage 1 YOLO (this model)"
+    - "Get bounding boxes"
+    - "Crop regions from image"
+    - "Pass crops to Stage 2 Classifier"
+    - "Combine results: position + classification"
+    
+# Version History
+version_history:
+  - version: "1.0"
+    date: "2025-11-26"
+    changes: "Initial training with FP16, 300 epochs"
+    metrics:
+      mAP50: 0.995
+      mAP50_95: 0.915
+      
+# References
+references:
+  yolov8_docs: "https://docs.ultralytics.com/"
+  rknn_guide: "D:\\bun-yoloV5\\TWO_STAGE_DETECTION\\rknn-tool-kit2-customMOdel\\Custom_Model_to_RKNN_Guide_v2.3.2.md"
+  project_guide: "D:\\bun-yoloV5\\TWO_STAGE_DETECTION\\TRAINING_EXPORT_GUIDE.md"
