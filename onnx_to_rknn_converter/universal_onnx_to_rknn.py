@@ -223,6 +223,12 @@ class UniversalONNXToRKNN:
             if custom_string:
                 config_params['custom_string'] = custom_string
             
+            # Add mean/std values to config (RKNN Toolkit 2.3.x)
+            if mean_values:
+                config_params['mean_values'] = mean_values
+            if std_values:
+                config_params['std_values'] = std_values
+            
             ret = self.rknn.config(**config_params)
             if ret != 0:
                 print(f"❌ Configuration failed with error code: {ret}")
@@ -256,10 +262,7 @@ class UniversalONNXToRKNN:
             else:
                 build_params['do_quantization'] = False
             
-            if mean_values:
-                build_params['mean_values'] = mean_values
-            if std_values:
-                build_params['std_values'] = std_values
+            # Note: mean_values and std_values are now passed via config() in RKNN Toolkit 2.3.x
             
             if do_hybrid_quant and hybrid_quant_file:
                 build_params['do_hybrid_quant'] = True
@@ -499,10 +502,10 @@ Output Location:
     
     # Quantization settings
     parser.add_argument('--quantize', '-q', action='store_true',
-                        help='Enable quantization (INT8)')
-    parser.add_argument('--dtype', default='INT8',
-                        choices=['INT8', 'FP16', 'UINT8'],
-                        help='Quantization data type (default: INT8)')
+                        help='Enable quantization (INT8/w8a8)')
+    parser.add_argument('--dtype', default='w8a8',
+                        choices=['w8a8', 'w8a16', 'w16a16i', 'w16a16i_dfp', 'w4a16', 'INT8', 'FP16', 'UINT8'],
+                        help='Quantization data type (default: w8a8). For RKNN Toolkit 2.3.x: w8a8 (INT8), w8a16, w16a16i, w4a16. Legacy: INT8, FP16, UINT8')
     parser.add_argument('--algorithm', default='normal',
                         choices=['normal', 'mmse', 'kl_divergence'],
                         help='Quantization algorithm (default: normal)')
@@ -546,6 +549,14 @@ Output Location:
     
     args = parser.parse_args()
     
+    # Map legacy dtype names to RKNN Toolkit 2.3.x names
+    dtype_mapping = {
+        'INT8': 'w8a8',
+        'UINT8': 'w8a8',
+        'FP16': None  # FP16 doesn't need quantized_dtype
+    }
+    quantized_dtype = dtype_mapping.get(args.dtype, args.dtype)
+    
     # Construct output path: Model-AI/<model-name>/<output-name>
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)  # Go up one level from onnx_to_rknn_converter/
@@ -574,7 +585,7 @@ Output Location:
         target_platform=args.platform,
         target_sub_platform=args.sub_platform,
         quantize=args.quantize,
-        quantized_dtype=args.dtype,
+        quantized_dtype=quantized_dtype,
         quantized_algorithm=args.algorithm,
         quantized_method=args.method,
         dataset_path=args.dataset,
