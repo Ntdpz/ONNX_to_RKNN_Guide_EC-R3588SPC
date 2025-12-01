@@ -32,8 +32,9 @@
 └─────────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ Phase 3: Conversion (RKNN)                                      │
+│ Phase 3: Conversion (RKNN) ⚠️ Linux Ubuntu 20.04 Only           │
 ├─────────────────────────────────────────────────────────────────┤
+│ ⚠️ Requirement: Linux Ubuntu 20.04 (RKNN-Toolkit2 supports Linux only) │
 │ Input:  best.onnx + onnx_source.yaml                            │
 │ Action: Read onnx_source.yaml → Convert RKNN + Quantize         │
 │ Output:                                                          │
